@@ -3,9 +3,14 @@ class CheckedRecord
     
     attr_reader :name, :options
 
+    def default
+      if options.has_key?(:default)
+        yield options[:default]
+      end
+    end
+
     def optional?
-      options.has_key?(:default) ||
-        options[:optional]
+      options.has_key?(:default)
     end
 
     def readonly?

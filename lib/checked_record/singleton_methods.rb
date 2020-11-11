@@ -19,6 +19,12 @@ class CheckedRecord
         access_mode == :write
       return !__fields__[name].readonly?
     end
+
+    def positional_new(*values)
+      # zipping in the correct order will unfortunately mask missing values
+      kwds = values.zip(__fields__.keys).map(&:reverse)
+      new(**Hash[kwds])
+    end
     
     private
     def __fields__

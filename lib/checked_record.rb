@@ -32,11 +32,20 @@ class CheckedRecord
     _initialize_values(kwds)
   end
 
+  def _initialize_defaults
+    @field_descriptions.each do |field_name, field_description|
+      field_description.default do |default_value|
+        instance_variable_set("@#{field_name}", default_value)
+      end
+    end
+  end
+
   def _initialize_value(name, value)
     instance_variable_set("@#{name}", value)
   end
 
   def _initialize_values(kwds)
+    _initialize_defaults
     kwds.each do |name, value|
       _initialize_value(name, value)
     end
