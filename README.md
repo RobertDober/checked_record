@@ -103,7 +103,7 @@ However...
 
 ```
 
-For a complete description of the basic API of `CheckedRecord` see [the basic API speculation](specuations/basic_api.md)
+For a complete description of the basic API of `CheckedRecord` see [the basic API speculation](speculations/basic_api.md)
 
 
 ## Checks
@@ -274,30 +274,10 @@ Other things you wanna catch early
     
 ```
 
-
-
-
-
+For a complete description of the checking API of `CheckedRecord` see [the checking API speculation](./speculations/checking_api.md)
 
 # LICENSE
 
 Copyright 2020 Robert Dober robert.dober@gmail.com
 
 Apache-2.0 [c.f LICENSE](LICENSE)
-
-
-
-
-
-
-
-
-# LICENSE
-
-Copyright 2020 Robert Dober robert.dober@gmail.com
-
-Apache-2.0 [c.f LICENSE](LICENSE)
-
-
-
-
