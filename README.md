@@ -106,93 +106,7 @@ However...
 For a complete description of the basic API of `CheckedRecord` see [the basic API speculation](speculations/basic_api.md)
 
 
-## Checks
-
-As the name indicates `CheckedRecord` is about, well _checks_.
-
-So far we have only seen the tip of the iceberg, so let us have a look at how we can constrain our fields even more...
-
-### Context General Constraint
-
-A General Constraint is simply a block or lambda that will always called when a value is modified or initialized
-
-```ruby :include
-    class TotallyChecked < CheckedRecord
-      field :positive do |value|
-        Integer === value && value > 0
-      end
-    end
-```
-
-No everything is still fine, as long as we behave
-
-```ruby :example sooo well behaved
-  expect( TotallyChecked.new(positive: 2).to_h ).to eq(positive: 2)
-```
-
-Behold the Zero though
-
-```ruby :example what a misstakea to makea
-  expect{ TotallyChecked.new(positive: 0) }
-    .to raise_error(CheckedRecord::ConstraintError, "illegal value 0 for field :positive")
-```
-
-#### And now for something completely different, types:
-
-```ruby :include
-    class TypedRecord < CheckedRecord
-      field :count, check: :non_negative_integer # inspired by Erlang
-      field :name,  check: String
-    end
-```
-
-Again we could behave...
-
-```ruby :example Behaving again...
-  expect{ TypedRecord.new(count: 0, name: "YHS") }.not_to raise_error 
-    
-```
-
-...or not 
-
-```ruby :example ...or not
-  expect{ TypedRecord.new(count: 0, name: :yours) }
-    .to raise_error(CheckedRecord::ConstraintError, "illegal value :yours for field :name")
-    
-```
-
-### Context Compile Time Checks
-
-It is interesting to note, that default values are checked at _compile time_, that is at the declaration
-of the field
-
-```ruby :example 
-  expect do
-    Class.new CheckedRecord do
-      field :count, default: -1, check: :non_negative_integer
-    end
-  end
-    .to raise_error(CheckedRecord::ConstraintError, "illegal default value -1 for field :count")
-```
-
-Other things you wanna catch early
-
-```ruby :example no more than once please
-  expect do
-    Class.new CheckedRecord do
-      field :a
-      field :a
-    end
-  end
-    .to raise_error(ArgumentError, %r{\Afield :a already defined in})
-    
-```
-
-
-For a complete description of the checking API of `CheckedRecord` see [checking API](specuations/checking_api.md)
-
-
-## Checks
+## Context Checks
 
 As the name indicates `CheckedRecord` is about, well _checks_.
 
@@ -275,6 +189,40 @@ Other things you wanna catch early
 ```
 
 For a complete description of the checking API of `CheckedRecord` see [the checking API speculation](./speculations/checking_api.md)
+
+## Context Validations
+
+Sofar we have only checked the value of a single field without a context, but as e.g. in `ActiveModel` we
+want to be able to assert certain conditions involving more than one field, e.g.
+
+
+Although this concise form might be convenient the general form of `validate` might be easier to write and to read
+
+```ruby :include
+    class OrderedPair < CheckedRecord
+      field :a, check: Integer
+      field :b, check: Integer
+      validate [:a, :b], with: :validate_order 
+
+      def validate_order
+        if a > b
+          "b must not be smaller than a but is (%s < %s)" % [b, a]
+        end
+      end
+    end
+```
+
+The validation method `validate_order` will return `nil` exactly if
+the validation succeeds, otherwise it returns the error message that will be added to the `ConstraintError` to
+be risen.
+
+
+```ruby :example a too bigly
+    expect{ OrderedPair.new(a: 42, b: 41) }
+      .to raise_error(CheckedRecord::ConstraintError, "b must not be smaller than a but is (41 < 42)")
+```
+
+For a complete description of the validation API of `CheckedRecord` see [the validation API speculation](./speculations/validation_api.md)
 
 # LICENSE
 

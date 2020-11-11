@@ -25,6 +25,12 @@ class CheckedRecord
       kwds = values.zip(__fields__.keys).map(&:reverse)
       new(**Hash[kwds])
     end
+
+    def validate(fields, with:)
+      fields.each do |field|
+        __validations__[field] << with
+      end
+    end
     
     private
     def __fields__
@@ -64,6 +70,10 @@ class CheckedRecord
     def __raise_argument_error_(errors)
       return if errors.empty?
       raise ArgumentError, __format_errors(errors)
+    end
+
+    def __validations__
+      @__validations__ ||= Hash.new{|h,k| h[k] = []}
     end
   end
 end
