@@ -39,6 +39,12 @@ class CheckedRecord
       @name = name
       @options = kwds
       _initialize_checks!(blk)
+      _check_default!
+    end
+
+    def _check_default!
+      return unless options[:default]
+      _raise_constraint_error!(options[:default], prefix: "illegal default value")
     end
 
     def _initialize_checks!(blk)
@@ -67,9 +73,9 @@ class CheckedRecord
       end
     end
 
-    def _raise_constraint_error!(value)
+    def _raise_constraint_error!(value, prefix: "illegal value")
       return unless checked? && !options[:check].(value)
-      raise ConstraintError, "illegal value #{value.inspect} for field #{name.inspect}"
+      raise ConstraintError, "#{prefix} #{value.inspect} for field #{name.inspect}"
     end
 
     def _raise_undefined_check

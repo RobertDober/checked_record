@@ -146,12 +146,148 @@ Behold the Zero though
     end
 ```
 
-Again we could behave
+Again we could behave...
 
 ```ruby :example Behaving again...
   expect{ TypedRecord.new(count: 0, name: "YHS") }.not_to raise_error 
     
 ```
+
+...or not 
+
+```ruby :example ...or not
+  expect{ TypedRecord.new(count: 0, name: :yours) }
+    .to raise_error(CheckedRecord::ConstraintError, "illegal value :yours for field :name")
+    
+```
+
+### Context Compile Time Checks
+
+It is interesting to note, that default values are checked at _compile time_, that is at the declaration
+of the field
+
+```ruby :example 
+  expect do
+    Class.new CheckedRecord do
+      field :count, default: -1, check: :non_negative_integer
+    end
+  end
+    .to raise_error(CheckedRecord::ConstraintError, "illegal default value -1 for field :count")
+```
+
+Other things you wanna catch early
+
+```ruby :example no more than once please
+  expect do
+    Class.new CheckedRecord do
+      field :a
+      field :a
+    end
+  end
+    .to raise_error(ArgumentError, %r{\Afield :a already defined in})
+    
+```
+
+
+For a complete description of the checking API of `CheckedRecord` see [checking API](specuations/checking_api.md)
+
+
+## Checks
+
+As the name indicates `CheckedRecord` is about, well _checks_.
+
+So far we have only seen the tip of the iceberg, so let us have a look at how we can constrain our fields even more...
+
+### Context General Constraint
+
+A General Constraint is simply a block or lambda that will always called when a value is modified or initialized
+
+```ruby :include
+    class TotallyChecked < CheckedRecord
+      field :positive do |value|
+        Integer === value && value > 0
+      end
+    end
+```
+
+No everything is still fine, as long as we behave
+
+```ruby :example sooo well behaved
+  expect( TotallyChecked.new(positive: 2).to_h ).to eq(positive: 2)
+```
+
+Behold the Zero though
+
+```ruby :example what a misstakea to makea
+  expect{ TotallyChecked.new(positive: 0) }
+    .to raise_error(CheckedRecord::ConstraintError, "illegal value 0 for field :positive")
+```
+
+#### And now for something completely different, types:
+
+```ruby :include
+    class TypedRecord < CheckedRecord
+      field :count, check: :non_negative_integer # inspired by Erlang
+      field :name,  check: String
+    end
+```
+
+Again we could behave...
+
+```ruby :example Behaving again...
+  expect{ TypedRecord.new(count: 0, name: "YHS") }.not_to raise_error 
+    
+```
+
+...or not 
+
+```ruby :example ...or not
+  expect{ TypedRecord.new(count: 0, name: :yours) }
+    .to raise_error(CheckedRecord::ConstraintError, "illegal value :yours for field :name")
+    
+```
+
+### Context Compile Time Checks
+
+It is interesting to note, that default values are checked at _compile time_, that is at the declaration
+of the field
+
+```ruby :example 
+  expect do
+    Class.new CheckedRecord do
+      field :count, default: -1, check: :non_negative_integer
+    end
+  end
+    .to raise_error(CheckedRecord::ConstraintError, "illegal default value -1 for field :count")
+```
+
+Other things you wanna catch early
+
+```ruby :example no more than once please
+  expect do
+    Class.new CheckedRecord do
+      field :a
+      field :a
+    end
+  end
+    .to raise_error(ArgumentError, %r{\Afield :a already defined in})
+    
+```
+
+
+
+
+
+
+# LICENSE
+
+Copyright 2020 Robert Dober robert.dober@gmail.com
+
+Apache-2.0 [c.f LICENSE](LICENSE)
+
+
+
+
 
 
 
