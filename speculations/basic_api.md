@@ -1,6 +1,6 @@
 # CheckedRecord
 
-## Basic Use Case
+## Basic API
 
 A really simple usage of `CheckedRecord` would look like this:
 

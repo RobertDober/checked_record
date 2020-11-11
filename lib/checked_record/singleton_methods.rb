@@ -1,10 +1,10 @@
 require_relative "field"
 class CheckedRecord
   module SingletonMethods
-    def field(name, **kwds)
+    def field(name, **kwds, &blk)
       raise ArgumentError, "field name needs to be a symbol, not #{name}" unless Symbol === name
       raise ArgumentError, "field :#{name} already defined in #{self}" if __fields__[name]
-      __fields__[name] = field = CheckedRecord::Field.new(name, **kwds)
+      __fields__[name] = field = CheckedRecord::Field.new(name, **kwds, &blk)
       if field.readonly?
         attr_reader name
       else

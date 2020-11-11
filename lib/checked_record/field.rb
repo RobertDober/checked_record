@@ -1,7 +1,23 @@
 class CheckedRecord
+
   class Field
+
+    PredefinedChecks = {
+      non_negative_integer: ->(n){ Integer === n && n >= 0},
+      positive_integer: ->(n){ Integer === n && n > 0}
+    }
     
     attr_reader :name, :options
+
+    def check!(value, &blk)
+      _raise_constraint_error!(value)
+      blk.() if blk
+      true
+    end
+
+    def checked?
+      !!options[:check]
+    end
 
     def default
       if options.has_key?(:default)
@@ -19,9 +35,45 @@ class CheckedRecord
 
 
     private
-    def initialize(name, **kwds)
+    def initialize(name, **kwds, &blk)
       @name = name
       @options = kwds
+      _initialize_checks!(blk)
+    end
+
+    def _initialize_checks!(blk)
+      raise ArgumentError, "must not provide a checking block and the check: option at the same time" if 
+        blk && options[:check]
+      options[:check] = blk if blk
+      _sanitize_checks! if options[:check]
+    end
+
+    def _predefined_checks!
+      check = PredefinedChecks.fetch(options[:check]) {_raise_undefined_check!}
+      options[:check] = check
+    end
+
+    def _sanitize_checks!
+      case options[:check]
+      when Symbol
+        _predefined_checks!
+      when Proc
+        true
+      when Class
+        klass = options[:check]
+        options[:check] = -> (value) { klass === value }
+      else
+        raise ArgumentError, "illegal type for a check option #{options[:check].inspect}"
+      end
+    end
+
+    def _raise_constraint_error!(value)
+      return unless checked? && !options[:check].(value)
+      raise ConstraintError, "illegal value #{value.inspect} for field #{name.inspect}"
+    end
+
+    def _raise_undefined_check
+      raise ArgumentError, "undefined check #{options[:check].inspect}\n, predefined: #{PredefinedChecks.keys.join(", ")}"
     end
   end
 end

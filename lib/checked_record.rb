@@ -1,5 +1,6 @@
 require_relative "checked_record/singleton_methods.rb"
 class CheckedRecord
+    ConstraintError = Class.new(RuntimeError)
 
 
   define_singleton_method :inherited do |by|
@@ -40,19 +41,17 @@ class CheckedRecord
   def _initialize_defaults
     @field_descriptions.each do |field_name, field_description|
       field_description.default do |default_value|
+        # We rely on the compile time check of default values here,
+        # actually an ugly optimization that might burn us if we add more general validation 
         instance_variable_set("@#{field_name}", default_value)
       end
     end
   end
 
-  def _initialize_value(name, value)
-    instance_variable_set("@#{name}", value)
-  end
-
   def _initialize_values(kwds)
     _initialize_defaults
     kwds.each do |name, value|
-      _initialize_value(name, value)
+      _set_field_value(name, value)
     end
   end
 
@@ -69,6 +68,12 @@ class CheckedRecord
   def _raise_key_error!(key, access_mode)
     return if self.class.has_key?(key, access_mode: access_mode)
     raise KeyError, _key_error_message(key, access_mode)
+  end
+
+  def _set_field_value(field_name, value)
+    @field_descriptions[field_name].check!(value) do
+      instance_variable_set("@#{field_name}", value)
+    end
   end
 
 end
