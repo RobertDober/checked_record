@@ -2,8 +2,9 @@
 require 'simplecov'
 SimpleCov.start
 
-require_relative "../lib/checked_record"
 
+$: << File.expand_path("../lib")
+require "checked_record"
 PROJECT_ROOT = File.expand_path "../..", __FILE__
 Dir[File.join(PROJECT_ROOT,"spec/support/**/*.rb")].each {|f| require f}
 

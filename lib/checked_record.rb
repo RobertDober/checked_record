@@ -1,14 +1,25 @@
-require_relative "checked_record/field"
+require_relative "checked_record/singleton_methods.rb"
 class CheckedRecord
 
-  define_singleton_method :field do |name, **kwds|
-    raise ArgumentError, "field name needs to be a symbol, not #{name}" unless Symbol === name
-    raise ArgumentError, "field :#{name} already defined" if __fields__[name]
-    __fields__[name] = field = CheckedRecord::Field.new(name, **kwds)
-    if field.readonly?
-      attr_reader name
-    else
-      attr_accessor name
+
+  define_singleton_method :inherited do |by|
+    by.extend SingletonMethods
+  end
+
+  def [](key)
+    _raise_key_error!(key, :read)
+    instance_variable_get("@#{key}")
+  end
+
+  def to_h
+    @field_descriptions.inject({}) do |res, (k,_)|
+      res.merge(k => self[k])
+    end
+  end
+
+  def values_at(*keys)
+    keys.inject([]) do |res, k|
+      res << self[k]
     end
   end
 
@@ -16,31 +27,24 @@ class CheckedRecord
 
   def initialize(**kwds)
     # Check for missing and illegal and constraints 
-    errors = self.class.__check_args_(**kwds)
-    raise ArgumentError, self.class.__format_errors_(errors) unless errors.empty?
+    self.class.send(:__check_args_, **kwds)
+    @field_descriptions = self.class.send(:__fields__)
+    _initialize_values(kwds)
   end
 
-  define_singleton_method :__fields__ do ||
-    @__fields__ ||= {}
+  def _initialize_value(name, value)
+    instance_variable_set("@#{name}", value)
   end
 
-  define_singleton_method :__check_args_ do |**kwds|
-    missing = {}
-      .merge(__check_missing_args_(kwds))
-      .merge(__check_forbidden_args_(kwds))
-      .merge(__check_constraints_(kwds))
-    
+  def _initialize_values(kwds)
+    kwds.each do |name, value|
+      _initialize_value(name, value)
+    end
   end
 
-  define_singleton_method :__format_errors do |errors|
-    errors
-      .inject([]) do |messages, (type, fields)|
-        if fields.empty?
-          messages
-        else
-          messages << "#{type}: #{fields.inspect}"
-        end
-      end
-      .join("\n")
+  def _raise_key_error!(key, access_mode)
+    return if self.class.has_key?(key, access_mode: access_mode)
+    raise KeyError, "undefined field #{key}"
   end
+
 end

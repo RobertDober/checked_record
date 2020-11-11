@@ -4,8 +4,7 @@ A `Struct` like superclass with constraints (writeable, types, runtime constrain
 Like a record but with type/constraint checks
 
 ```ruby :include
-    require "checked_record"
-    class Animal < CheckedRecord
+    class Pet < CheckedRecord
       field :species, enum: [:dog, :cat], default: :dog
       field :sex, enum: [:male, :female]
       field :breed, type: String 
@@ -15,10 +14,10 @@ Like a record but with type/constraint checks
 
 ## Object Nursery
 
-Let's begin with a legal `Animal` 
+Let's begin with a legal `Pet` 
 
 ```ruby :example A default dog
-  vilma = Animal.new(sex: :female, breed: "Labrador", age: 16)
+  vilma = Pet.new(sex: :female, breed: "Labrador", age: 16)
     
 ```
 
