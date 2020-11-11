@@ -11,6 +11,11 @@ class CheckedRecord
     instance_variable_get("@#{key}")
   end
 
+  def []=(key, value)
+    _raise_key_error!(key, :write)
+    instance_variable_set("@#{key}", value)
+  end
+
   def to_h
     @field_descriptions.inject({}) do |res, (k,_)|
       res.merge(k => self[k])
@@ -51,9 +56,19 @@ class CheckedRecord
     end
   end
 
+  def _key_error_message(key, access_mode)
+    case access_mode
+    when :read
+      "undefined field #{key}"
+    else
+      "must not modify readonly field #{key.inspect}"
+    end
+    
+  end
+
   def _raise_key_error!(key, access_mode)
     return if self.class.has_key?(key, access_mode: access_mode)
-    raise KeyError, "undefined field #{key}"
+    raise KeyError, _key_error_message(key, access_mode)
   end
 
 end

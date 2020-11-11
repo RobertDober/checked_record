@@ -14,7 +14,7 @@ class CheckedRecord
     end
 
     def readonly?
-      false
+      !!options[:readonly]
     end
 
 
