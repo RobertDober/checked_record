@@ -3,16 +3,19 @@ class CheckedRecord
   class Field
 
     PredefinedChecks = {
-      non_negative_integer: ->(n){ Integer === n && n >= 0},
-      positive_integer: ->(n){ Integer === n && n > 0}
+      int: ->(n) {Integer === n},
+      non_negative_int: ->(n){ Integer === n && n >= 0},
+      positive_int: ->(n){ Integer === n && n > 0},
+      string: ->(s) {String === s},
+      sym: ->(s) {Symbol === s},
     }
     
     attr_reader :name, :options
 
-    def check!(value, &blk)
-      _raise_constraint_error!(value)
+    def check!(value, errors=nil, &blk)
+      _raise_constraint_error!(value, errors: errors)
       blk.() if blk
-      true
+      errors.nil? || errors.empty?
     end
 
     def checked?
@@ -54,9 +57,38 @@ class CheckedRecord
       _sanitize_checks! if options[:check]
     end
 
+    def _make_readable_predefined_list
+      PredefinedChecks
+        .keys
+        .sort
+        .group_by{|predef| predef[0]}
+        .values
+        .map{|predef| predef.map(&:inspect).join(", ")}
+        .join("\n            ")
+    end
+
     def _predefined_checks!
       check = PredefinedChecks.fetch(options[:check]) {_raise_undefined_check!}
       options[:check] = check
+    end
+
+    def _raise_constraint_error!(value, errors: nil, prefix: "illegal value")
+      return unless checked? && !options[:check].(value)
+      message =  "#{prefix} #{value.inspect} for field #{name.inspect}"
+      case errors
+      when Array
+        errors <<  message
+      else
+        raise ConstraintError, message
+      end
+    end
+
+    def _raise_undefined_check!
+      raise ArgumentError, "undefined check #{options[:check].inspect}\npredefined: #{_readable_predefined_list}"
+    end
+
+    def _readable_predefined_list
+      @__readable_predefined_list__ ||= _make_readable_predefined_list
     end
 
     def _sanitize_checks!
@@ -73,13 +105,5 @@ class CheckedRecord
       end
     end
 
-    def _raise_constraint_error!(value, prefix: "illegal value")
-      return unless checked? && !options[:check].(value)
-      raise ConstraintError, "#{prefix} #{value.inspect} for field #{name.inspect}"
-    end
-
-    def _raise_undefined_check
-      raise ArgumentError, "undefined check #{options[:check].inspect}\n, predefined: #{PredefinedChecks.keys.join(", ")}"
-    end
   end
 end

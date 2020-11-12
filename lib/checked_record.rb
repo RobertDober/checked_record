@@ -1,4 +1,5 @@
 require_relative "checked_record/singleton_methods.rb"
+require_relative "checked_record/error.rb"
 class CheckedRecord
     ConstraintError = Class.new(RuntimeError)
 
@@ -12,9 +13,23 @@ class CheckedRecord
     instance_variable_get("@#{key}")
   end
 
-  def []=(key, value)
-    _raise_key_error!(key, :write)
-    instance_variable_set("@#{key}", value)
+  def []=(field_name, value)
+    _raise_key_error!(field_name, :write)
+    instance_variable_set("@#{field_name}", value)
+    errors = _validate_field(field_name)
+    return value if errors.empty?
+    raise ConstraintError, _format_errors(field_name => errors)
+  end
+
+  def merge(other=nil, **kwds)
+  end
+
+  def merge!(other=nil, **kwds)
+    status, result = merge(other, **kwds)
+    case status
+    when :ok
+      result
+    end
   end
 
   def to_h
@@ -53,10 +68,13 @@ class CheckedRecord
   end
 
   def _initialize_values(kwds)
+    errors = []
     _initialize_defaults
     kwds.each do |name, value|
-      _set_field_value(name, value)
+      _set_field_value(name, value, errors)
     end
+    return true if errors.empty?
+    raise ConstraintError, errors.join("\n")
   end
 
   def _key_error_message(key, access_mode)
@@ -74,8 +92,8 @@ class CheckedRecord
     raise KeyError, _key_error_message(key, access_mode)
   end
 
-  def _set_field_value(field_name, value)
-    @__field_descriptions[field_name].check!(value) do
+  def _set_field_value(field_name, value, errors)
+    @__field_descriptions[field_name].check!(value, errors) do
       instance_variable_set("@#{field_name}", value)
     end
   end
@@ -98,7 +116,7 @@ class CheckedRecord
     end
   end
 
-  def _validate_field(field_name, already_run)
+  def _validate_field(field_name, already_run=Set.new)
     @__validations[field_name]
       .map do |validation|
         unless already_run.member?(validation)

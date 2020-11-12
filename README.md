@@ -141,7 +141,7 @@ Behold the Zero though
 
 ```ruby :include
     class TypedRecord < CheckedRecord
-      field :count, check: :non_negative_integer # inspired by Erlang
+      field :count, check: :non_negative_int # inspired by Erlang
       field :name,  check: String
     end
 ```
@@ -169,7 +169,7 @@ of the field
 ```ruby :example 
   expect do
     Class.new CheckedRecord do
-      field :count, default: -1, check: :non_negative_integer
+      field :count, default: -1, check: :non_negative_int
     end
   end
     .to raise_error(CheckedRecord::ConstraintError, "illegal default value -1 for field :count")
@@ -223,6 +223,73 @@ be risen.
 ```
 
 For a complete description of the validation API of `CheckedRecord` see [the validation API speculation](./speculations/validation_api.md)
+
+## Context Consistency
+
+Let us assume we have a
+
+```ruby :include
+    class UbuntuName < CheckedRecord
+      field :adjective, check: String
+      field :animal, check: String
+      validate :all, with: :legal_ubuntu_name
+
+      def legal_ubuntu_name
+        return if adjective[0] == animal[0]
+        "Ubuntu Names must have the same initials"
+      end
+    end
+```
+
+### How to lose Consistent State
+
+Now we create a new release
+
+```ruby :include
+    let(:zeberon) { UbuntuName.new(adjective: "zealous", animal: "zeberon")}
+```
+
+And now we break it
+
+```ruby :example Breaking the Zeberon
+  expect{ zeberon.animal = "Cerberon" }.to raise_error(CheckedRecord::ConstraintError) 
+  expect( zeberon.animal ).to eq("Cerberon") # which is unfortunate
+```
+
+### Keeping Consistent State
+
+#### Using immutability
+
+##### `merge!` you guess why it did not work
+
+If this is not too costly, and frankly it would rarely be, create a new object with the new values, thusly
+leaving the receiver unchanged
+
+```ruby :example Immutable Zeberons Stay Forever
+  cerberon = zeberon.merge!(animal: "cerberon")
+  expect( cerberon ).to be_nil
+  expect( zeberon.animal ).to eq("zeberon")
+```
+
+Now if you do it right of course ;)
+
+
+```ruby :example Cerberon Ex Macchina
+  cerberon = zeberon.merge!(adjective: "cynomagical", animal: "cerberon")
+  expect( zeberon.animal ).to eq("zeberon")
+  expect( cerberon.to_h ).to eq(adjective: "cynomagical", animal: "cerberon")
+```
+
+##### `merge` I tell you what went wrong
+
+In case of errors we might want to have some error information, in that case we can use merge
+
+```ruby :example Tell me why
+  status, cerberon = zeberon.merge(animal: "cerberon")
+  expect(status).to eq(:error)
+  expect( cerberon ).to eq("") 
+  expect( zeberon.animal ).to eq("zeberon")
+```
 
 # LICENSE
 

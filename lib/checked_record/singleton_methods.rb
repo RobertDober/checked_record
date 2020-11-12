@@ -5,10 +5,12 @@ class CheckedRecord
       raise ArgumentError, "field name needs to be a symbol, not #{name}" unless Symbol === name
       raise ArgumentError, "field :#{name} already defined in #{self}" if __fields__[name]
       __fields__[name] = field = CheckedRecord::Field.new(name, **kwds, &blk)
-      if field.readonly?
-        attr_reader name
-      else
-        attr_accessor name
+      attr_reader name
+      unless field.readonly?
+        # to assure checks and validations
+        define_method "#{name}=" do |value|
+          self[name] = value
+        end
       end
     end
 
@@ -27,6 +29,7 @@ class CheckedRecord
     end
 
     def validate(fields, with:)
+      fields = __fields__.keys if fields == :all
       fields.each do |field|
         __validations__[field] << with
       end
