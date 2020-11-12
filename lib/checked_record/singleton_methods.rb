@@ -1,12 +1,19 @@
 require_relative "field"
 class CheckedRecord
   module SingletonMethods
+    def mutable?
+      @__mutable__
+    end
+    def mutable!
+      @__mutable__ = true
+    end
+
     def field(name, **kwds, &blk)
       raise ArgumentError, "field name needs to be a symbol, not #{name}" unless Symbol === name
       raise ArgumentError, "field :#{name} already defined in #{self}" if __fields__[name]
       __fields__[name] = field = CheckedRecord::Field.new(name, **kwds, &blk)
       attr_reader name
-      unless field.readonly?
+      unless field.readonly? || !mutable?
         # to assure checks and validations
         define_method "#{name}=" do |value|
           self[name] = value

@@ -51,6 +51,8 @@ class CheckedRecord
     end
 
     def _initialize_checks!(blk)
+      raise ArgumentError, "must not provide the ceck: and type: option at the same time" if options[:check] && options[:type]
+      options[:check] = options.delete(:type) if options[:type]
       raise ArgumentError, "must not provide a checking block and the check: option at the same time" if 
         blk && options[:check]
       options[:check] = blk if blk

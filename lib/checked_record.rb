@@ -1,11 +1,13 @@
 require_relative "checked_record/singleton_methods.rb"
 require_relative "checked_record/error.rb"
 class CheckedRecord
-    ConstraintError = Class.new(RuntimeError)
+  ConstraintError = Class.new(RuntimeError)
+  ImmutableError = Class.new(RuntimeError)
 
 
   define_singleton_method :inherited do |by|
     by.extend SingletonMethods
+    by.instance_variable_set("@__mutable__", false)
   end
 
   def [](key)
@@ -14,6 +16,7 @@ class CheckedRecord
   end
 
   def []=(field_name, value)
+    raise ImmutableError, "must not update an immutable record" unless self.class.mutable?
     _raise_key_error!(field_name, :write)
     instance_variable_set("@#{field_name}", value)
     errors = _validate_field(field_name)
