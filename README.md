@@ -2,11 +2,12 @@
 
 What is it?
 
-I cannot explain, but Ruby can
+Well depends on how you use it. Let us examine some of the possibilities
 
-## Some First Impressions
+## `CheckedRecord` is ...
 
-If you want a `Struct` with a nicer and saver constructor
+### Context ... a `Struct` with a nicer and stricter constuctor
+
 
 ```ruby :include
   class StructlikePerson < CheckedRecord
@@ -35,7 +36,7 @@ However not much more safety here:
 
 Oh and what was that `mutable!` for?
 
-Maybe you guessed, let's verify
+Maybe you guessed, let's verify 
 
 ```ruby :include
     let(:mutable_me) {StructlikePerson.new(name: "me", age: 42)}
@@ -47,12 +48,12 @@ Maybe you guessed, let's verify
     expect( mutable_me.age ).to eq(43)
 ```
 
-Look Ma', no mutations
+### Context ... an immutable `Struct` 
 
 ```ruby :include
     class ImmutablePerson < CheckedRecord
-      field :name, type: String
-      field :age,  type: :non_negative_int
+      field :name
+      field :age
     end
 
     let(:immutable_me) { ImmutablePerson.new(name: "me", age: 42)}
@@ -72,14 +73,37 @@ maybe?
 
 Nice try but no!
 
+The access methods to `CheckedRecord` instances are described here [speculations about access methods](speculations/access_methods.md)  
 
-Eagly eyed as you are you have spotted these `types` there, right?
+### Context ... a (type) checked `Struct` 
+
+By using the `type:` or `check:` keyword (use whatever seems more readable, they are aliases)
+one can assure that fields always adhere to certain contracts
 
 ```ruby :example Types, really?
-  expect { ImmutablePerson.new(name: 42, age: "mine")}
-    .to raise_error(CheckedRecord::ConstraintError, /illegal value 42 for field :name\nillegal value "mine" for field :age/)
+  expect { ImmutablePerson.new(name: 42, age: -1)}
+    .to raise_error(CheckedRecord::ConstraintError, /illegal value 42 for field :name\nillegal value -1 for field :age/)
     
 ```
+
+The `type:` keyword is AAMOF an alias of `check:`, which, yeah, we can check out as follows
+
+```ruby :include
+    class MyChecks < CheckedRecord
+      include_helpers for: %i{checks}
+      mutable!
+      field :the_answer, default: 42, check: ->(value){value == 42} # Well kinda of a dogma
+      field :the_question, default: "The meaning of life, the universe and everything", check: method(:check_question) 
+
+      def check_question maybe_legal_question
+        maybe_legal_question[%r{meaning}i] &&
+        maybe_legal_question[%r{life}i] &&
+        maybe_legal_question[%r{universe}i] &&
+        maybe_legal_question[%r{everything}i]
+      end
+    end
+```
+
 
 
 
