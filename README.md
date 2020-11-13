@@ -90,10 +90,11 @@ The `type:` keyword is AAMOF an alias of `check:`, which, yeah, we can check out
 
 ```ruby :include
     class MyChecks < CheckedRecord
-      include_helpers for: %i{checks}
+      use_helpers for: %i{checks}
       mutable!
       field :the_answer, default: 42, check: ->(value){value == 42} # Well kinda of a dogma
       field :the_question, default: "The meaning of life, the universe and everything", check: method(:check_question) 
+      field :author, default: "Doug Adams"
 
       def check_question maybe_legal_question
         maybe_legal_question[%r{meaning}i] &&
@@ -102,13 +103,36 @@ The `type:` keyword is AAMOF an alias of `check:`, which, yeah, we can check out
         maybe_legal_question[%r{everything}i]
       end
     end
+    
+    let(:correct) {MyChecks.new(the_answer: 42)}
 ```
 
+All is well...
 
+```ruby :example All is well...
+  correct
+```
 
+However ...
 
+we are living a restricted life:
 
-## Quick Start Guide
+```ruby :example A restriced life
+  expect{ MyChecks.new(the_answer: 41) }
+    .to raise_error(CheckedRecord::ConstraintError, %r{illegal value.*41.*for_field :the_answer})
+```
+
+But safety has it's price
+
+```ruby :example Plagiatism, noooo!
+  
+  expect{ correct.update(author: "YNSHS", the_question: "What about life?") }
+    .to raise_error(CheckedRecord::ConstraintError, %r{illegal value.*What about life\?.*for_field :the_question})
+    
+  expect( correct.author ).to eq("Doug Adams")
+```
+
+The type and check API of `CheckedRecord` instances is described here [speculations about type and check API](speculations/type_and_check_api.md)  
 
 # LICENSE
 
