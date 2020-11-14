@@ -1,3 +1,4 @@
+require_relative "checked_record/result.rb"
 require_relative "checked_record/singleton_methods.rb"
 require_relative "checked_record/error.rb"
 class CheckedRecord

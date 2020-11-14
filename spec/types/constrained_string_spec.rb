@@ -55,7 +55,7 @@ RSpec.describe CheckedRecord::Types::Predefineds, type: :type_spec do
       end
     end
 
-    context "min, max and size conflicts" do
+    context "conflicting arguments: min, max and size" do
       let(:expected_message) { "must not combine min or max with size"  }
       
       it "size and min" do
@@ -121,6 +121,29 @@ RSpec.describe CheckedRecord::Types::Predefineds, type: :type_spec do
           validate(with: "Hello")
           refute(with: "", message: %{value "" is not capitalized})
           refute(with: "HEllo", message: %{value "HEllo" is not capitalized})
+        }
+      end
+    end
+
+    context "conflicting arguments: keywords" do
+      let(:keyword_error_message) { "must provide only one of the following keywords [:capitalized, :lowercase, :uppercase]" }
+      
+      context "there can only be one" do
+        it {
+          expect{ constrained_string :capitalized, :lowercase }
+            .to raise_error(ArgumentError, keyword_error_message)
+        }
+        it {
+          expect{ constrained_string :capitalized, :uppercase }
+            .to raise_error(ArgumentError, keyword_error_message)
+        }
+        it {
+          expect{ constrained_string :lowercase, :uppercase }
+            .to raise_error(ArgumentError, keyword_error_message)
+        }
+        it {
+          expect{ constrained_string :capitalized, :lowercase, :uppercase }
+            .to raise_error(ArgumentError, keyword_error_message)
         }
       end
     end

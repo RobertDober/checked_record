@@ -1,4 +1,4 @@
-
+require_relative "../helpers/arguments"
 class CheckedRecord
   module Types
     class ConstrainedString < AbstractType
@@ -6,6 +6,7 @@ class CheckedRecord
       LegalFlags = %i[
         capitalized lowercase uppercase
       ]
+
 
       Capitalized =%r{\A[[:upper:]][[:lower:]]*\z}
       LowerCase = %r{\A[[:lower:]]*\z}
@@ -102,6 +103,7 @@ class CheckedRecord
       end
 
       def _set_flags(flags)
+        flag_args = Arguments.new
         illegal_flags = flags - LegalFlags
         _raise_flags_argument_error(illegal_flags)
         @flags = Set.new(flags)
