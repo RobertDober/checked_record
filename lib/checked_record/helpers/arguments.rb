@@ -1,37 +1,52 @@
 class CheckedRecord
-  class Arguments
-      
-    def allowed? value
-      @allowed.nil? || @allowed.include?(value)
-    end
+  module Helpers
+    class Arguments
 
-    def check values
-      illegal_values = @allowed ? values - @allowed : []
-      @errors << "Illegal arguments #{illegal_values.inspect}, allowed are: #{@allowed.inspect}" unless illegal_values.empty?
-      conflicting = values & @exclusive
-      @errors << "Conflicting arguments #{conflicting.inspect}, only one of #{@exclusive.inspect} is allowed" if
+      def allowed? value
+        @allowed.nil? || @allowed.include?(value)
+      end
+
+      def check values
+        illegal_values = @allowed ? values - @allowed : []
+        @errors << "Illegal arguments #{illegal_values.inspect}, allowed are: #{@allowed.inspect}" unless illegal_values.empty?
+        conflicting = values & @exclusive
+        @errors << "Conflicting arguments #{conflicting.inspect}, only one of #{@exclusive.inspect} is allowed" if
         conflicting.size > 1
-      missing = values & @required
-      @errors << "Required argument missing, one of #{@required.inspect} must be provided"  if missing.empty?
-    end
+        missing = values & @required
+        @errors << "Required argument missing, one of #{@required.inspect} must be provided"  if missing.empty?
+        if @errors.empty?
+          Result.ok
+        else
+          Result.error(_format, error: ArgumentError)
+        end
 
-    private
+        private
 
-    def exclusive values
-      @exclusive = values
-    end
+        def _format
+          @errors.join("\n")
+        end
 
-    def initialize(&blk)
-      @allowed   = nil
-      @errors    = []
-      @exclusive = []
-      @required  = []
+        def allow *values
+          @allowed = values.flatten
+        end
 
-      instance_eval(&blk) if blk
-    end
+        def exclusive values
+          @exclusive = values
+        end
 
-    def needs required
-      @required = required
+        def initialize(&blk)
+          @allowed   = nil
+          @errors    = []
+          @exclusive = []
+          @required  = []
+
+          instance_eval(&blk) if blk
+        end
+
+        def needs required
+          @required = required
+        end
+      end
     end
   end
 end

@@ -13,13 +13,35 @@ RSpec.describe Result do
       end
 
       it "does not raise" do
-        expect{ ok.raise! }.not_to raise_error
+        expect( ok.raise! ).to eq(ok.value)
       end
 
       it "is frozen" do
         expect( ok ).to be_frozen
       end
     end
+
+    context "default ok constructor (like :ok)" do
+      let(:ok) { described_class.ok }
+
+      it "is ok" do
+        expect(ok).to be_ok 
+      end
+
+      it "has the correct value" do
+        expect( ok.value ).to be_nil
+      end
+
+      it "does not raise" do
+        expect( ok.raise! ).to eq(ok.value)
+      end
+
+      it "is frozen" do
+        expect( ok ).to be_frozen
+      end
+      
+    end
+
 
     context "error constructor" do
       let(:message) {string_double("oh no")}
@@ -61,6 +83,25 @@ RSpec.describe Result do
       it "error needs an exception class" do
         expect{ described_class.error(message, error: RuntimeError.new) }.to raise_error(ArgumentError)
       end
+    end
+
+    context "pattern matching" do
+      let(:message) { string_double("error") }
+      
+      let(:ok) { described_class.ok(43) }
+      let(:error) { described_class.error(message)}
+
+      it "matches the ok variant" do
+        ok in [:ok, value]
+        expect( value ).to eq(43)
+      end
+      
+      it "matches the error variant" do
+        error in [exc, msg] 
+        expect([exc, msg]).to eq([RuntimeError, message])
+      end
+      
+
     end
   end
 end

@@ -10,7 +10,7 @@ class Result
   end
 
   def raise!
-    return if ok?
+    return value if ok?
     raise status, value
   end
   class << self
@@ -28,7 +28,7 @@ class Result
       o.freeze
     end
 
-    def ok(value)
+    def ok(value=nil)
       o = allocate
       o.instance_exec do
         @status = :ok
